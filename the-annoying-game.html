@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You Can't Escape</title>
+    <style>
+        /* --- Base Styles --- */
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
+            overflow: hidden; /* Hide scrollbars to make our custom scroll even more confusing */
+            cursor: none; /* Hide the real cursor */
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            background-color: #fff; /* Start with a plain background */
+            transition: background-color 0.2s;
+        }
+
+        /* --- Endings Tracker --- */
+        #endings-tracker {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid white;
+            z-index: 10001;
+            font-size: 12px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #endings-tracker h3 {
+            margin: 0 0 5px 0;
+            text-align: center;
+            color: lime;
+        }
+        #endings-tracker ul {
+            margin: 0;
+            padding: 0 0 0 15px;
+        }
+        #endings-tracker li {
+            padding-bottom: 3px;
+        }
+
+        /* --- The Fake Cursor --- */
+        #fake-cursor {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="red" d="M16 0L0 28h32L16 0z"/><path fill="yellow" d="M16 4L4 26h24L16 4z"/></svg>');
+            background-size: contain;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s;
+        }
+
+        /* --- The Uncatchable Button --- */
+        #runaway-btn {
+            position: absolute;
+            top: 40%;
+            left: 40%;
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #00ff00;
+            color: #ff00ff;
+            border: 5px dashed yellow;
+            border-radius: 15px;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 0 20px magenta;
+            font-weight: bold;
+            z-index: 500;
+        }
+        
+        #runaway-btn:hover {
+            transform: scale(0.8);
+            background-color: #ff0000;
+        }
+
+        /* --- Annoying Popups --- */
+        .popup {
+            position: fixed;
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(45deg, orange, cyan);
+            border: 10px solid lime;
+            border-image: repeating-linear-gradient(45deg, red, yellow 10px, green 20px) 20;
+            z-index: 1000;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            display: none; /* Initially hidden */
+        }
+
+        .popup h2 { margin: 0; color: blue; text-shadow: 2px 2px 2px white; }
+        .popup p { font-size: 16px; color: white; text-shadow: 2px 2px 2px black; }
+        
+        .popup-close {
+            position: absolute; top: 5px; right: 5px; width: 25px; height: 25px;
+            background: red; color: white; border: 2px solid white; border-radius: 50%;
+            font-weight: bold; line-height: 21px; cursor: pointer;
+        }
+        .popup-close.trap { background: #B22222; border-color: yellow; }
+
+        /* --- Cookie Banner from Hell --- */
+        #cookie-banner {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9);
+            color: white; padding: 20px; z-index: 9998; text-align: center; font-size: 18px;
+        }
+        
+        #cookie-banner button {
+            padding: 10px 20px; font-size: 16px; margin: 0 10px; background: #4CAF50;
+            color: white; border: none; border-radius: 5px; transition: all 0.3s ease;
+        }
+        
+        /* --- The Main Content Area --- */
+        #content-wrapper {
+            width: 100%; height: 100vh; overflow-y: scroll;
+            position: absolute; top: 0; left: 0;
+        }
+        
+        .content {
+             padding: 50px; font-size: 22px; line-height: 1.8;
+             max-width: 800px; margin: 0 auto; color: #333;
+        }
+        
+        .content h1 {
+            font-size: 3em; text-align: center; color: transparent;
+            background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+            -webkit-background-clip: text; background-clip: text;
+            animation: rainbow-text 5s linear infinite;
+        }
+
+        @keyframes rainbow-text {
+            0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; }
+        }
+        
+        /* --- Mischievous Form --- */
+        #annoying-form {
+            margin-top: 50px; padding: 30px; border: 3px dotted blue; background: #f0f8ff;
+        }
+        #annoying-form label { font-size: 20px; }
+        #uncheckable { width: 25px; height: 25px; }
+        #submit-form { font-size: 20px; padding: 10px 20px; margin-top: 15px; }
+
+        /* --- Ending Specific Styles --- */
+        #bsod {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #0000AA; color: white; font-family: 'Lucida Console', 'Consolas', monospace;
+            z-index: 10000; padding: 20px; display: none;
+        }
+        #bsod h1 { font-size: 24px; background-color: #AAAAAA; color: #0000AA; display: inline; padding: 0 10px; }
+        #bsod p { font-size: 16px; margin-top: 30px; }
+        
+        #clippy-container {
+            position: fixed; bottom: 50px; right: 50px; z-index: 10002; display: none;
+        }
+        #clippy-bubble {
+            background: #ffc; border: 1px solid black; padding: 20px; border-radius: 10px;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.5);
+        }
+        #clippy-img { width: 100px; height: auto; display: block; margin: 10px auto 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <!-- Endings Tracker UI -->
+    <div id="endings-tracker">
+        <h3>Unlocked Endings</h3>
+        <ul id="endings-list"></ul>
+    </div>
+
+    <!-- The fake cursor that jumps around -->
+    <div id="fake-cursor"></div>
+
+    <!-- The main scrollable content -->
+    <div id="content-wrapper">
+        <div class="content">
+            <h1>Welcome to Paradise!</h1>
+            <p>We've created the most user-friendly experience imaginable. Everything on this page is designed with YOU in mind. We guarantee you'll have a smooth, intuitive, and productive time here. Our award-winning design team spent countless hours refining every detail to ensure your utmost satisfaction.</p>
+            <p>Try clicking the button below to claim your prize! It's super easy and definitely not frustrating at all. We promise. Why would we lie? We are a trustworthy source of internet content. Your prize is just one click away. Go on, give it a try.</p>
+            <button id="runaway-btn">Click Me for a Prize!</button>
+            <p>Scrolling on our site is a revolutionary experience. We've inverted the standard paradigm to challenge your muscle memory. True enlightenment requires a journey to the bottom, a return to the top, and a final descent.</p>
+            <p>Did we mention the colors? We believe in a vibrant web. A dynamic, ever-changing canvas of visual delight. If you feel a slight sense of unease, that's just joy overwhelming your senses. Trying to grasp the text in different places might change your perspective.</p>
+            <form id="annoying-form" onsubmit="return false;">
+                <h2>Sign up for our newsletter!</h2>
+                <p>Knowledge is power. Some keywords are more powerful than others. Maybe you need 'help', or perhaps you want to enter the 'matrix'. Or maybe you just have 'money' on your mind. The right word combined with the right action is key.</p>
+                <input type="text" id="name-input" placeholder="Your Name" style="width: 80%; padding: 10px; font-size: 18px;"><br><br>
+                <input type="email" id="email-input" placeholder="Your Email" style="width: 80%; padding: 10px; font-size: 18px;"><br><br>
+                <label for="uncheckable"><input type="checkbox" id="uncheckable"> I agree to the terms and conditions. Only the most truly persistent can agree.</label>
+                <br>
+                <button type="submit" id="submit-form">Subscribe!</button>
+            </form>
+            <p>Please enjoy the complimentary background music. It has been scientifically engineered to enhance focus and improve mood. The track is a carefully curated masterpiece of auditory art. You're welcome.</p>
+        </div>
+    </div>
+
+    <!-- The cookie banner that is hard to get rid of -->
+    <div id="cookie-banner">
+        <p>This website uses cookies to enhance your experience. Some choices have consequences. Some choices, when repeated, have... different consequences.</p>
+        <button id="accept-cookies">Accept</button>
+        <button id="reject-cookies">Reject</button>
+    </div>
+    
+    <script>
+        // --- Get all the annoying elements ---
+        const body = document.body;
+        const fakeCursor = document.getElementById('fake-cursor');
+        const runawayBtn = document.getElementById('runaway-btn');
+        const cookieBanner = document.getElementById('cookie-banner');
+        const acceptCookiesBtn = document.getElementById('accept-cookies');
+        const rejectCookiesBtn = document.getElementById('reject-cookies');
+        const contentWrapper = document.getElementById('content-wrapper');
+        const nameInput = document.getElementById('name-input');
+        const emailInput = document.getElementById('email-input');
+        const uncheckable = document.getElementById('uncheckable');
+        const endingsList = document.getElementById('endings-list');
+        const annoyingForm = document.getElementById('annoying-form');
+        const submitBtn = document.getElementById('submit-form');
+
+        let mouseX = 0, mouseY = 0;
+        let cursorX = window.innerWidth / 2, cursorY = window.innerHeight / 2;
+        let hasInteracted = false;
+        let time = 0;
+        let allIntervals = [];
+        let audioContext;
+
+        // --- Action Counters & State ---
+        let popupCloseCount = 0;
+        let checkboxClickCount = 0;
+        let cookieAcceptCount = 0;
+        let scrollState = { bottom: false, top: false };
+        let selectionAttempts = new Set();
+        let helpTyped = false;
+        let moneyTyped = false;
+
+        // --- Endings Management ---
+        let unlockedEndings = JSON.parse(localStorage.getItem('unlockedEndings')) || [];
+        function updateEndingsDisplay() {
+            endingsList.innerHTML = '';
+            const uniqueEndings = [...new Set(unlockedEndings)];
+            uniqueEndings.forEach(ending => {
+                const li = document.createElement('li');
+                li.textContent = ending;
+                endingsList.appendChild(li);
+            });
+        }
+        function unlockEnding(endingName) {
+            if (unlockedEndings.includes(endingName)) return false; // Don't re-trigger
+            unlockedEndings.push(endingName);
+            localStorage.setItem('unlockedEndings', JSON.stringify(unlockedEndings));
+            updateEndingsDisplay();
+            return true;
+        }
+
+        // --- Helper to manage intervals ---
+        function setAnnoyingInterval(func, delay) {
+            const id = setInterval(func, delay);
+            allIntervals.push(id);
+            return id;
+        }
+
+        // --- ENDINGS ---
+        
+        function clearAllAnnoyances(isEnding = true) {
+            allIntervals.forEach(clearInterval);
+            document.querySelectorAll('.popup, #cookie-banner, #fake-cursor').forEach(el => el.remove());
+            if (isEnding) {
+                body.style.cursor = 'default'; // Make sure the real cursor comes back
+            }
+        }
+
+        function endingContentMeltdown() { if (unlockEnding("Content Meltdown")) { clearAllAnnoyances(); document.querySelectorAll('.content *').forEach(el => { el.style.transition = 'all 2s ease-in'; el.style.transform = `translate(${(Math.random() - 0.5) * 1000}px, ${(Math.random() - 0.5) * 1000}px) rotate(${Math.random() * 720}deg)`; el.style.opacity = '0'; el.style.fontSize = '1px'; }); }}
+        function endingElementInvasion() { if (unlockEnding("Element Invasion")) { clearAllAnnoyances(); body.innerHTML = ''; body.style.backgroundColor = 'black'; setAnnoyingInterval(() => { const invader = document.createElement('div'); invader.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:${Math.random()*100}vh; width:${Math.random()*20+5}px; height:${Math.random()*20+5}px; background:rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255}); border-radius:50%; z-index:10001;`; body.appendChild(invader); }, 10); }}
+        function endingFakeBSOD() { if (unlockEnding("System Crash (BSOD)")) { clearAllAnnoyances(); const bsod = document.createElement('div'); bsod.id = 'bsod'; bsod.innerHTML = `<h1> Windows </h1><p>A fatal exception 0E has occurred at 0028:C0011E36 in VXD VMM(01) + 00010E36.</p><p>The current application will be terminated.</p><p>* Press any key to terminate the current application.</p><p>* Press CTRL+ALT+DEL again to restart your computer. You will lose any unsaved information in all applications.</p><br><p>Press any key to continue _</p>`; body.innerHTML = ''; body.appendChild(bsod); bsod.style.display = 'block'; }}
+        function endingAsciiRain() { if (unlockEnding("ASCII Rain")) { clearAllAnnoyances(); body.innerHTML = '<canvas id="matrix-canvas"></canvas>'; body.style.backgroundColor = 'black'; const canvas = document.getElementById('matrix-canvas'); const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%'; const fontSize = 16; const columns = canvas.width / fontSize; let drops = Array(Math.floor(columns)).fill(1); function drawMatrix() { ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#0F0'; ctx.font = `${fontSize}px monospace`; for (let i = 0; i < drops.length; i++) { const text = letters.charAt(Math.floor(Math.random() * letters.length)); ctx.fillText(text, i * fontSize, drops[i] * fontSize); if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0; drops[i]++; } } setInterval(drawMatrix, 33); }}
+        function endingPageFlip() { if (unlockEnding("Page Flipper")) { clearAllAnnoyances(); body.style.perspective = '1000px'; contentWrapper.style.transition = 'transform 0.5s'; let flipped = false; setInterval(() => { flipped = !flipped; contentWrapper.style.transform = `rotateY(${flipped ? 180 : 0}deg)`; }, 500); }}
+        function endingInvert() { if (unlockEnding("Color Inversion")) { clearAllAnnoyances(); document.documentElement.style.transition = 'filter 1s'; document.documentElement.style.filter = 'invert(1)'; }}
+        function endingTextScramble() { if (unlockEnding("Text Scrambler")) { clearAllAnnoyances(); const chars = '!<>-_\\/[]{}—=+*^?#________'; document.querySelectorAll('p, h1, h2, button, label').forEach(el => { const originalText = el.textContent; let frame = 0; const interval = setInterval(() => { el.textContent = originalText.split('').map((char, index) => { if (index < frame) return originalText[index]; const randomChar = chars[Math.floor(Math.random() * chars.length)]; return char !== ' ' ? randomChar : ' '; }).join(''); if (frame >= originalText.length) clearInterval(interval); frame++; }, 50); }); }}
+        function endingFakePurchase() { if (unlockEnding("Accidental Purchase")) { clearAllAnnoyances(); body.innerHTML = '<div style="text-align:center; padding-top:20vh; font-size: 2em; color: green;"><h1>Thank You!</h1><p>Your purchase of 1,000,000 rubber ducks has been confirmed.</p><p>A charge of $999,999.99 has been applied to your account.</p></div>'; setInterval(() => { const confetti = document.createElement('div'); confetti.textContent = '🎉'; confetti.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-50px; font-size:${Math.random()*2+1}em; animation:fall 3s linear;`; document.body.appendChild(confetti); }, 100); const style = document.createElement('style'); style.innerHTML = `@keyframes fall{to{transform:translateY(110vh) rotate(360deg);}}`; document.head.appendChild(style); }}
+        function endingClippy() { if (unlockEnding("Clippy's Revenge")) { clearAllAnnoyances(); body.innerHTML += `<div id="clippy-container"><div id="clippy-bubble"><p>It looks like you're trying to use this website. Would you like some help with that?</p></div><img id="clippy-img" src="https://placehold.co/150x150/cccccc/000000?text=📎" alt="Clippy"></div>`; const clippyImg = document.getElementById('clippy-container'); clippyImg.style.display = 'block'; clippyImg.addEventListener('click', () => { alert('I am trying to help! Please do not resist.'); }); }}
+        function endingPageReload() { if (unlockEnding("Groundhog Day")) { window.location.reload(); }}
+        function endingRickroll() { if (unlockEnding("The Ultimate Betrayal")) { window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; }}
+
+        // --- Event Listeners for Endings ---
+        runawayBtn.addEventListener('click', endingFakeBSOD);
+        rejectCookiesBtn.addEventListener('click', endingInvert);
+
+        acceptCookiesBtn.addEventListener('click', () => {
+            cookieAcceptCount++;
+            if (cookieAcceptCount >= 7) {
+                endingPageReload();
+            } else {
+                cookieBanner.style.display = 'none';
+                setTimeout(() => { cookieBanner.style.display = 'block'; }, 2000);
+                acceptCookiesBtn.innerText = `Accept (${7 - cookieAcceptCount} left)`;
+            }
+        });
+
+        submitBtn.addEventListener('click', () => {
+            if (helpTyped) {
+                endingClippy();
+            } else if (moneyTyped && uncheckable.checked) {
+                endingFakePurchase();
+            } else if (uncheckable.checked) {
+                endingRickroll();
+            }
+        });
+        
+        contentWrapper.addEventListener('scroll', () => {
+            const atBottom = contentWrapper.scrollTop + contentWrapper.clientHeight >= contentWrapper.scrollHeight - 5;
+            const atTop = contentWrapper.scrollTop === 0;
+            if (atBottom) scrollState.bottom = true;
+            if (atTop && scrollState.bottom) scrollState.top = true;
+            if (atBottom && scrollState.top) endingContentMeltdown();
+        });
+
+        uncheckable.addEventListener('click', () => {
+            checkboxClickCount++;
+            if (checkboxClickCount >= 25) {
+                endingPageFlip();
+            } else {
+                 if (uncheckable.checked) { setTimeout(() => { uncheckable.checked = false; }, 500); }
+            }
+        });
+
+        nameInput.addEventListener('input', () => {
+            const val = nameInput.value.toLowerCase();
+            if (val.includes('matrix')) endingAsciiRain();
+            if (val.includes('help')) helpTyped = true; else helpTyped = false;
+        });
+        emailInput.addEventListener('input', () => {
+            if (emailInput.value.toLowerCase().includes('money')) moneyTyped = true; else moneyTyped = false;
+        });
+
+        document.querySelectorAll('.content p').forEach((p, index) => {
+            p.addEventListener('mousedown', () => { selectionAttempts.add(index); });
+            p.addEventListener('mousemove', () => { if (selectionAttempts.size >= 3) { endingTextScramble(); } });
+        });
+
+        // --- Core Annoyance Logic ---
+        document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+        function updateFakeCursor() {
+            time += 0.1;
+            const joltX = (Math.random() - 0.5) * 25;
+            const joltY = (Math.random() - 0.5) * 25;
+            cursorX += (mouseX - cursorX) * 0.2 + joltX;
+            cursorY += (mouseY - cursorY) * 0.2 + joltY;
+            if (Math.random() < 0.002) {
+                cursorX = Math.random() * window.innerWidth;
+                cursorY = Math.random() * window.innerHeight;
+            }
+            cursorX = Math.max(0, Math.min(window.innerWidth - 30, cursorX));
+            cursorY = Math.max(0, Math.min(window.innerHeight - 30, cursorY));
+            fakeCursor.style.left = `${cursorX}px`;
+            fakeCursor.style.top = `${cursorY}px`;
+            const scale = 1 + Math.sin(time) * 0.5;
+            const rotation = time * 20;
+            fakeCursor.style.transform = `rotate(${rotation}deg) scale(${scale})`;
+            requestAnimationFrame(updateFakeCursor);
+        }
+        function changeBackgroundColor() { body.style.backgroundColor = `rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`; }
+        function moveRunawayButton() { const distance = Math.sqrt(Math.pow(runawayBtn.offsetLeft + runawayBtn.offsetWidth / 2 - mouseX, 2) + Math.pow(runawayBtn.offsetTop + runawayBtn.offsetHeight / 2 - mouseY, 2)); if (distance < 200) { runawayBtn.style.left = `${Math.random() * (window.innerWidth - 200)}px`; runawayBtn.style.top = `${Math.random() * (window.innerHeight - 100)}px`; }}
+        
+        const popupMessages = [
+            "Have you tried turning it off and on again?",
+            "Your PC might be at risk! Or it might not be.",
+            "You've won a free virus!",
+            "Error 404: Sanity not found.",
+            "Are you still there?",
+            "This popup is helping.",
+            "Click 'X' to receive another popup!"
+        ];
+
+        const trapPopupMessages = [
+            "CRITICAL SYSTEM ALERT!",
+            "Click here for a hint!",
+            "Your prize is in this popup!",
+            "FREE DOWNLOAD!",
+            "Security Breach Detected!"
+        ];
+        
+        function playDeathSound() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(440, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.5);
+        }
+
+        function createPopup() {
+            if (!hasInteracted) return;
+            const popup = document.createElement('div');
+            popup.className = 'popup';
+            popup.style.left = `${Math.random() * (window.innerWidth - 350)}px`;
+            popup.style.top = `${Math.random() * (window.innerHeight - 250)}px`;
+            
+            const isTrap = Math.random() < 0.25; // 25% chance of being a trap
+            const message = isTrap 
+                ? trapPopupMessages[Math.floor(Math.random() * trapPopupMessages.length)]
+                : popupMessages[Math.floor(Math.random() * popupMessages.length)];
+
+            popup.innerHTML = `<h2>A Wild Notification Appears!</h2><p>${message}</p><div class="popup-close ${isTrap ? 'trap' : ''}">X</div>`;
+            popup.querySelector('.popup-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                popup.remove();
+                if (isTrap) {
+                    playDeathSound();
+                    popupCloseCount = 0; // Reset progress
+                    const resetMsg = document.createElement('div');
+                    resetMsg.textContent = "PROGRESS RESET!";
+                    resetMsg.style.cssText = `position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3em; color:red; text-shadow: 2px 2px black; z-index: 10003;`;
+                    body.appendChild(resetMsg);
+                    setTimeout(() => resetMsg.remove(), 1500);
+                } else {
+                    popupCloseCount++;
+                    if (popupCloseCount >= 10) {
+                        endingElementInvasion();
+                    }
+                }
+                setTimeout(createPopup, 100);
+            });
+            body.appendChild(popup);
+            popup.style.display = 'block';
+            setTimeout(() => popup.remove(), 8000);
+        }
+        function playAnnoyingMelody() { if (!audioContext) return; const notes = [261, 293, 329, 349, 392, 440, 493, 523]; let time = 0; for (let i = 0; i < 32; i++) { setTimeout(() => { const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(audioContext.destination); oscillator.type = ['sine', 'square', 'sawtooth', 'triangle'][Math.floor(Math.random() * 4)]; oscillator.frequency.setValueAtTime(notes[Math.floor(Math.random() * notes.length)], audioContext.currentTime); gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); oscillator.start(audioContext.currentTime); oscillator.stop(audioContext.currentTime + 0.1); }, time); time += 150; }}
+        document.body.addEventListener('click', () => { if (!hasInteracted) { hasInteracted = true; audioContext = new (window.AudioContext || window.webkitAudioContext)(); setAnnoyingInterval(playAnnoyingMelody, 4800); playAnnoyingMelody(); }}, { once: true });
+        let targetScroll = 0, currentScroll = 0;
+        contentWrapper.addEventListener('wheel', e => { e.preventDefault(); targetScroll -= e.deltaY; targetScroll = Math.max(0, Math.min(contentWrapper.scrollHeight - contentWrapper.clientHeight, targetScroll)); }, { passive: false });
+        function laggyScroll() { currentScroll += (targetScroll - currentScroll) * 0.1; contentWrapper.scrollTop = currentScroll; requestAnimationFrame(laggyScroll); }
+        setAnnoyingInterval(() => { if (document.activeElement === nameInput || document.activeElement === emailInput) { if (Math.random() < 0.3) { nameInput.value = ''; emailInput.value = ''; }}}, 1000);
+
+        // --- Start the Annoyances ---
+        updateEndingsDisplay();
+        updateFakeCursor(); // Start the loop
+        laggyScroll(); // Start the loop
+        setAnnoyingInterval(changeBackgroundColor, 200);
+        setAnnoyingInterval(moveRunawayButton, 50);
+        setAnnoyingInterval(createPopup, 4000);
+        console.log("Good luck. You'll need it.");
+    </script>
+</body>
+</html>
